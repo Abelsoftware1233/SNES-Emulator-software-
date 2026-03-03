@@ -2,105 +2,59 @@ const canvas = document.getElementById('nes-canvas');
 const ctx = canvas.getContext('2d');
 const statusText = document.getElementById('status-text');
 const romLoader = document.getElementById('rom-loader');
-const pauseBtn = document.getElementById('pause-btn');
 const audioBtn = document.getElementById('start-audio-btn');
-const saveBtn = document.getElementById('save-btn');
-const loadBtn = document.getElementById('load-btn');
-
-let isPaused = false;
-let gameInterval = null;
-let audioContext = null;
-let audioBuffer = [];
-
-// NES Initialisatie
 const nes = new jsnes.NES({
     onFrame: (frameBuffer) => {
         const imageData = ctx.getImageData(0, 0, 256, 240);
         const data = imageData.data;
         for (let i = 0; i < frameBuffer.length; i++) {
-            const pixel = frameBuffer[i];
-            data[i * 4] = pixel & 0xFF;
-            data[i * 4 + 1] = (pixel >> 8) & 0xFF;
-            data[i * 4 + 2] = (pixel >> 16) & 0xFF;
-            data[i * 4 + 3] = 0xFF;
+            data[i*4] = frameBuffer[i] & 0xFF;
+            data[i*4+1] = (frameBuffer[i] >> 8) & 0xFF;
+            data[i*4+2] = (frameBuffer[i] >> 16) & 0xFF;
+            data[i*4+3] = 0xFF;
         }
         ctx.putImageData(imageData, 0, 0);
     },
-    onAudioSample: (left, right) => {
-        if (audioContext) audioBuffer.push(left, right);
-    }
+    onAudioSample: (l, r) => { if (audioCtx) audioBuffer.push(l, r); }
 });
 
-// Audio verwerking
+let audioCtx = null, audioBuffer = [], gameLoop = null;
+
+function startLoop() { gameLoop = setInterval(() => { nes.frame(); if(audioCtx && audioBuffer.length > 4096) playAudio(); }, 1000/60); }
 function playAudio() {
-    if (!audioContext || audioBuffer.length < 4096) return;
-    const buffer = audioContext.createBuffer(2, audioBuffer.length / 2, 44100);
-    const left = buffer.getChannelData(0);
-    const right = buffer.getChannelData(1);
-    for (let i = 0; i < audioBuffer.length / 2; i++) {
-        left[i] = audioBuffer[i * 2];
-        right[i] = audioBuffer[i * 2 + 1];
-    }
-    const source = audioContext.createBufferSource();
-    source.buffer = buffer;
-    source.connect(audioContext.destination);
-    source.start();
-    audioBuffer = [];
+    const b = audioCtx.createBuffer(2, audioBuffer.length/2, 44100);
+    for(let i=0; i<2; i++) { const d = b.getChannelData(i); for(let j=0; j<b.length; j++) d[j] = audioBuffer[j*2+i]; }
+    const s = audioCtx.createBufferSource(); s.buffer = b; s.connect(audioCtx.destination); s.start(); audioBuffer = [];
 }
 
-// Game Loop
-function startGameLoop() {
-    gameInterval = setInterval(() => {
-        nes.frame();
-        if (audioContext) playAudio();
-    }, 1000 / 60);
-}
-
-// Event Listeners
 romLoader.onchange = (e) => {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        nes.loadROM(event.target.result);
-        if (gameInterval) clearInterval(gameInterval);
-        startGameLoop();
-        statusText.innerText = "Game geladen!";
-    };
-    reader.readAsBinaryString(e.target.files[0]);
+    const r = new FileReader();
+    r.onload = (ev) => { nes.loadROM(ev.target.result); if(gameLoop) clearInterval(gameLoop); startLoop(); statusText.innerText = "Speel nu!"; };
+    r.readAsBinaryString(e.target.files[0]);
 };
 
-audioBtn.onclick = () => {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    audioBtn.disabled = true;
-    audioBtn.innerText = "🔊 Audio Aan";
+audioBtn.onclick = () => { audioCtx = new AudioContext(); audioBtn.style.display = 'none'; };
+
+// Input Mapping
+const NES_KEYS = {
+    'btn-up': jsnes.Controller.BUTTON_UP, 'btn-down': jsnes.Controller.BUTTON_DOWN,
+    'btn-left': jsnes.Controller.BUTTON_LEFT, 'btn-right': jsnes.Controller.BUTTON_RIGHT,
+    'btn-a': jsnes.Controller.BUTTON_A, 'btn-b': jsnes.Controller.BUTTON_B,
+    'btn-start': jsnes.Controller.BUTTON_START, 'btn-select': jsnes.Controller.BUTTON_SELECT
 };
 
-pauseBtn.onclick = () => {
-    isPaused = !isPaused;
-    if (isPaused) {
-        clearInterval(gameInterval);
-        pauseBtn.classList.add('active');
-        statusText.innerText = "Gepauzeerd";
-    } else {
-        startGameLoop();
-        pauseBtn.classList.remove('active');
-        statusText.innerText = "Systeem draait";
-    }
-};
+// Touch events voor mobiel
+Object.keys(NES_KEYS).forEach(id => {
+    const el = document.getElementById(id);
+    el.ontouchstart = (e) => { e.preventDefault(); nes.buttonDown(1, NES_KEYS[id]); };
+    el.ontouchend = (e) => { e.preventDefault(); nes.buttonUp(1, NES_KEYS[id]); };
+});
 
-saveBtn.onclick = () => {
-    localStorage.setItem('nes_save', JSON.stringify(nes.toJSON()));
-    statusText.innerText = "💾 Opgeslagen!";
-};
+// Toetsenbord voor desktop
+const KB_MAP = {38:'btn-up', 40:'btn-down', 37:'btn-left', 39:'btn-right', 88:'btn-a', 90:'btn-b', 13:'btn-start', 16:'btn-select'};
+document.onkeydown = (e) => { if(KB_MAP[e.keyCode]) nes.buttonDown(1, NES_KEYS[KB_MAP[e.keyCode]]); };
+document.onkeyup = (e) => { if(KB_MAP[e.keyCode]) nes.buttonUp(1, NES_KEYS[KB_MAP[e.keyCode]]); };
 
-loadBtn.onclick = () => {
-    const data = localStorage.getItem('nes_save');
-    if (data) {
-        nes.fromJSON(JSON.parse(data));
-        statusText.innerText = "📂 Geladen!";
-    }
-};
-
-// Toetsenbord
-const keys = {38:0, 40:1, 37:2, 39:3, 88:4, 90:5, 13:7, 16:6};
-document.onkeydown = (e) => { if(keys[e.keyCode]!==undefined) nes.buttonDown(1, [jsnes.Controller.BUTTON_UP, jsnes.Controller.BUTTON_DOWN, jsnes.Controller.BUTTON_LEFT, jsnes.Controller.BUTTON_RIGHT, jsnes.Controller.BUTTON_A, jsnes.Controller.BUTTON_B, jsnes.Controller.BUTTON_SELECT, jsnes.Controller.BUTTON_START][keys[e.keyCode]]); };
-document.onkeyup = (e) => { if(keys[e.keyCode]!==undefined) nes.buttonUp(1, [jsnes.Controller.BUTTON_UP, jsnes.Controller.BUTTON_DOWN, jsnes.Controller.BUTTON_LEFT, jsnes.Controller.BUTTON_RIGHT, jsnes.Controller.BUTTON_A, jsnes.Controller.BUTTON_B, jsnes.Controller.BUTTON_SELECT, jsnes.Controller.BUTTON_START][keys[e.keyCode]]); };
+// Save & Load
+document.getElementById('save-btn').onclick = () => localStorage.setItem('save', JSON.stringify(nes.toJSON()));
+document.getElementById('load-btn').onclick = () => { const s = localStorage.getItem('save'); if(s) nes.fromJSON(JSON.parse(s)); };
