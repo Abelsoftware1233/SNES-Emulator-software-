@@ -2,8 +2,8 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo AI - Mario NES Emulator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Echo AI - Mario Mobile Emulator</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,28 +16,39 @@
         </div>
 
         <div class="status-bar">
-            <p id="status-text">Selecteer een .nes bestand om te starten</p>
+            <p id="status-text">Selecteer .nes bestand</p>
         </div>
 
-        <div class="controls-panel">
+        <div class="top-controls">
             <input type="file" id="rom-loader" accept=".nes">
+            <button id="start-audio-btn">🔊 Audio</button>
+        </div>
+
+        <div id="mobile-controller" class="mobile-only">
+            <div class="d-pad">
+                <button class="btn-ctrl" id="btn-up">↑</button>
+                <div class="d-pad-horizontal">
+                    <button class="btn-ctrl" id="btn-left">←</button>
+                    <button class="btn-ctrl" id="btn-right">→</button>
+                </div>
+                <button class="btn-ctrl" id="btn-down">↓</button>
+            </div>
+
+            <div class="action-keys">
+                <button class="btn-ctrl btn-round" id="btn-b">B</button>
+                <button class="btn-ctrl btn-round" id="btn-a">A</button>
+            </div>
+            
+            <div class="system-keys">
+                <button class="btn-ctrl btn-rect" id="btn-select">SELECT</button>
+                <button class="btn-ctrl btn-rect" id="btn-start">START</button>
+            </div>
         </div>
 
         <div class="action-buttons">
-            <button id="start-audio-btn">🔊 Start Audio</button>
-            <button id="pause-btn">⏸️ Pauze</button>
+            <button id="pause-btn">⏸️</button>
             <button id="save-btn" class="blue-btn">💾 Save</button>
             <button id="load-btn" class="purple-btn">📂 Load</button>
-        </div>
-
-        <div class="instructions">
-            <h3>Besturing:</h3>
-            <ul>
-                <li><strong>Pijltjestoetsen:</strong> Bewegen</li>
-                <li><strong>X:</strong> A (Springen)</li>
-                <li><strong>Z:</strong> B (Rennen/Vuurbal)</li>
-                <li><strong>Enter:</strong> Start | <strong>Shift:</strong> Select</li>
-            </ul>
         </div>
     </div>
 
