@@ -91,3 +91,11 @@ document.getElementById('pause-btn').onclick = () => {
     if (gameLoop) { clearInterval(gameLoop); gameLoop = null; statusText.innerText = "Pauze"; }
     else { startLoop(); statusText.innerText = "Spelen!"; }
 };
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('Service Worker geregistreerd!', reg))
+      .catch(err => console.log('Service Worker mislukt:', err));
+  });
+}
