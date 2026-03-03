@@ -123,3 +123,4 @@ document.getElementById('pause-btn').onclick = () => {
         statusText.innerText = "Speel nu!";
     }
 };
+
