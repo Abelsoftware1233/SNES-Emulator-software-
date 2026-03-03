@@ -15,9 +15,19 @@
             <canvas id="nes-canvas" width="256" height="240"></canvas>
         </div>
 
+        <div class="status-bar">
+            <p id="status-text">Selecteer een .nes bestand om te starten</p>
+        </div>
+
         <div class="controls-panel">
             <input type="file" id="rom-loader" accept=".nes">
-            <p class="status" id="status-text">Selecteer een Mario .nes bestand</p>
+        </div>
+
+        <div class="action-buttons">
+            <button id="start-audio-btn">🔊 Start Audio</button>
+            <button id="pause-btn">⏸️ Pauze</button>
+            <button id="save-btn" class="blue-btn">💾 Save</button>
+            <button id="load-btn" class="purple-btn">📂 Load</button>
         </div>
 
         <div class="instructions">
@@ -26,8 +36,7 @@
                 <li><strong>Pijltjestoetsen:</strong> Bewegen</li>
                 <li><strong>X:</strong> A (Springen)</li>
                 <li><strong>Z:</strong> B (Rennen/Vuurbal)</li>
-                <li><strong>Enter:</strong> Start</li>
-                <li><strong>Rechter Shift:</strong> Select</li>
+                <li><strong>Enter:</strong> Start | <strong>Shift:</strong> Select</li>
             </ul>
         </div>
     </div>
